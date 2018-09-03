@@ -10,19 +10,18 @@ import UIKit
 import AVFoundation
 
 class ABThumbnailsManager: NSObject {
-    
     var thumbnailViews = [UIImageView]()
-
-    private func addImagesToView(images: [UIImage], view: UIView){
-        
+    
+    private func addImagesToView(images: [UIImage], view: UIView)
+    {
         self.thumbnailViews.removeAll()
         var xPos: CGFloat = 0.0
         var width: CGFloat = 0.0
-        for image in images{
+        for image in images {
             DispatchQueue.main.async {
-                if xPos + view.frame.size.height < view.frame.width{
+                if xPos + view.frame.size.height < view.frame.width {
                     width = view.frame.size.height
-                }else{
+                } else {
                     width = view.frame.size.width - xPos
                 }
                 
@@ -35,9 +34,8 @@ class ABThumbnailsManager: NSObject {
                                          width: width,
                                          height: view.frame.size.height)
                 self.thumbnailViews.append(imageView)
-                
-                
                 view.addSubview(imageView)
+                
                 UIView.animate(withDuration: 0.2, animations: {() -> Void in
                     imageView.alpha = 1.0
                 })
@@ -46,40 +44,30 @@ class ABThumbnailsManager: NSObject {
             }
         }
     }
-    
-    private func thumbnailCount(inView: UIView) -> Int {
-		
-		var num : Double = 0;
-		
-		DispatchQueue.main.sync {
-        	num = Double(inView.frame.size.width) / Double(inView.frame.size.height)
-		}
 
-        return Int(ceil(num))
+    private func thumbnailCount(inView: UIView) -> Int
+    {
+        return Int(ceil(Double(inView.frame.size.width) / Double(inView.frame.size.height)))
     }
     
-    func updateThumbnails(view: UIView, videoURL: URL, duration: Float64) -> [UIImageView]{
-
+    func updateThumbnails(view: UIView, videoURL: URL, duration: Float64)
+    {
         var thumbnails = [UIImage]()
         var offset: Float64 = 0
 
-        
-        for view in self.thumbnailViews{
-            DispatchQueue.main.sync
-            {
+        DispatchQueue.main.async {
+            for view in self.thumbnailViews {
                 view.removeFromSuperview()
             }
+            
+            let imagesCount = self.thumbnailCount(inView: view)
+            for i in 0..<imagesCount {
+                let thumbnail = ABVideoHelper.thumbnailFromVideo(videoUrl: videoURL,
+                                                                 time: CMTimeMake(Int64(offset), 1))
+                offset = Float64(i) * (duration / Float64(imagesCount))
+                thumbnails.append(thumbnail)
+            }
+            self.addImagesToView(images: thumbnails, view: view)
         }
-        
-        let imagesCount = self.thumbnailCount(inView: view)
-        
-        for i in 0..<imagesCount{
-            let thumbnail = ABVideoHelper.thumbnailFromVideo(videoUrl: videoURL,
-                                                             time: CMTimeMake(Int64(offset), 1))
-            offset = Float64(i) * (duration / Float64(imagesCount))
-            thumbnails.append(thumbnail)
-        }
-        self.addImagesToView(images: thumbnails, view: view)
-        return self.thumbnailViews
     }
 }
